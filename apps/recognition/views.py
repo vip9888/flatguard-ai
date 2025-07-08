@@ -10,6 +10,9 @@ from .models import Flatmate
 from .serializers import FlatmateSerializer
 import shutil
 
+# Define the known faces directory - fix the path
+KNOWN_FACES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'ai', 'known_faces')
+
 class RegisterFlatmate(APIView):
     def post(self, request):
         serializer = FlatmateSerializer(data=request.data)
@@ -18,7 +21,7 @@ class RegisterFlatmate(APIView):
 
             # Also save a copy of the image in /ai/known_faces/ as jpg
             src_path = flatmate.image.path
-            dst_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'ai', 'known_faces')
+            dst_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'ai', 'known_faces')
             dst_path = os.path.join(dst_dir, f"{flatmate.name}.jpg")
             shutil.copy(src_path, dst_path)
 
@@ -35,7 +38,7 @@ class DeleteFlatmate(APIView):
             flatmate = Flatmate.objects.get(pk=pk)
 
             # Delete the known face image as well
-            known_face_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'ai', 'known_faces', f"{flatmate.name}.jpg")
+            known_face_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'ai', 'known_faces', f"{flatmate.name}.jpg")
             if os.path.exists(known_face_path):
                 os.remove(known_face_path)
 
@@ -43,8 +46,7 @@ class DeleteFlatmate(APIView):
             flatmate.delete()
             return Response({"message": "Flatmate deleted"}, status=204)
         except Flatmate.DoesNotExist:
-            return Response({"error": "Flatmate not found"}, status=404)
-
+            return Response({"error": "Flatmate not found"}, status=404)  
 
 
 class RecognizeFace(APIView):
@@ -54,16 +56,27 @@ class RecognizeFace(APIView):
         if not image:
             return Response({"error": "Image is required"}, status=400)
 
+        # Create directory if it doesn't exist
+        os.makedirs(KNOWN_FACES_DIR, exist_ok=True)
+        
         temp_path = os.path.join(KNOWN_FACES_DIR, "temp.jpg")
         with open(temp_path, "wb+") as f:
             for chunk in image.chunks():
                 f.write(chunk)
 
         matches = verify_face_and_return_match(temp_path)
-        os.remove(temp_path)
+        
+        # Clean up temporary file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
         if matches:
-            return Response({"match": matches[0][0]}, status=200)
+            name, distance = matches[0]
+            return Response({
+                "match": name,
+                "confidence": round(1 - distance, 3),
+                "distance": round(distance, 4)
+            }, status=200)
         else:
             return Response({"match": "Unknown"}, status=200)
 
