@@ -8,12 +8,19 @@ from django.conf import settings
 from apps.recognition.utils import verify_face_and_return_match
 from .models import Flatmate
 from .serializers import FlatmateSerializer
+from apps.alerts.models import Alert
+from django.core.mail import send_mail
+from django.conf import settings
+from datetime import datetime
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import permission_classes
 import shutil
 
 # Define the known faces directory - fix the path
 KNOWN_FACES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'ai', 'known_faces')
 
 class RegisterFlatmate(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         serializer = FlatmateSerializer(data=request.data)
         if serializer.is_valid():
@@ -29,10 +36,12 @@ class RegisterFlatmate(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ListFlatmates(ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Flatmate.objects.all()
     serializer_class = FlatmateSerializer
 
 class DeleteFlatmate(APIView):
+    permission_classes = [IsAuthenticated]
     def delete(self, request, pk):
         try:
             flatmate = Flatmate.objects.get(pk=pk)
@@ -50,16 +59,15 @@ class DeleteFlatmate(APIView):
 
 
 class RecognizeFace(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self,request):
         image=request.FILES.get("image")
 
         if not image:
             return Response({"error": "Image is required"}, status=400)
 
-        # Create directory if it doesn't exist
-        os.makedirs(KNOWN_FACES_DIR, exist_ok=True)
-        
-        temp_path = os.path.join(KNOWN_FACES_DIR, "temp.jpg")
+        # Save temp image OUTSIDE known_faces directory
+        temp_path = os.path.join(settings.BASE_DIR, "temp.jpg")
         with open(temp_path, "wb+") as f:
             for chunk in image.chunks():
                 f.write(chunk)
@@ -78,5 +86,21 @@ class RecognizeFace(APIView):
                 "distance": round(distance, 4)
             }, status=200)
         else:
+            Alert.objects.create(name="Unknown", image="UnknownFaceDetected.jpg")
+
+            # Send Email Notification
+            send_mail(
+                subject="🚨 FlatGuard Alert: Unknown Face Detected",
+                message=f"""
+An unknown person was detected at your flat.
+
+🕒 Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+📍 Please check your alert logs or CCTV stream.
+""",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=['vc9958454536@gmail.com'],  # Replace with your email
+                fail_silently=False,
+            )
+
             return Response({"match": "Unknown"}, status=200)
 
