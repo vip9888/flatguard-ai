@@ -52,6 +52,15 @@ REST_FRAMEWORK = {
     )
 }
 
+# JWT Settings
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),  # 24 hours instead of default 5 minutes
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),   # 7 days
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
+from .views import GenAIChatView
 
 urlpatterns = [
-    # Add AI interface-related URLs here when needed
-    # For now, this is a placeholder
+    path('chat/', GenAIChatView.as_view(), name='genai-chat'),
 ] 

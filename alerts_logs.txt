@@ -1,0 +1,3 @@
+Alert: Unknown person detected at 6:15 AM on June 27
+Alert: Known user Vipul entered at 9:00 AM on June 27
+Alert: Unknown person detected again at 11:00 PM on June 28
