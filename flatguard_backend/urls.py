@@ -27,6 +27,8 @@ urlpatterns = [
     path('api/camera/', include('apps.camera.urls')),
     path('api/ai/', include('apps.genai_interface.urls')),
     path('api/auth/', include('apps.users.urls')),
+    path('api/flatmates/', include('apps.flatmates.urls')),
+
 ]
 
 

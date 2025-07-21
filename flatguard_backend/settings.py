@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'apps.alerts',
     'apps.camera',
     'apps.genai_interface',
+    'apps.flatmates',
 ]
 
 REST_FRAMEWORK = {
@@ -76,7 +77,6 @@ ROOT_URLCONF = 'flatguard_backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
